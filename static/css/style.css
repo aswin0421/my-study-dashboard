@@ -1,0 +1,171 @@
+/* 기본 초기화 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Malgun Gothic', sans-serif;
+    background-color: #f8f9fa;
+
+    display: flex;
+    justify-content: center;  /* 가로축 기준 가운데 정렬 */
+    align-items: center;      /* 세로축 기준 가운데 정렬 */
+    height: 100vh;
+}
+
+.container {
+    text-align: center;
+    background: white;
+    padding: 50px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.category-section p {
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* 기본 버튼 스타일 */
+.category-btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    border: 2px solid #ff6b6b;
+    background-color: white;
+    color: #ff6b6b;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* 마우스를 올렸을 때 */
+.category-btn:hover {
+    background-color: #ff9999;
+    color: white;
+}
+
+/* 버튼이 활성화(클릭)되었을 때의 스타일 */
+.category-btn.active {
+    background-color: #ff6b6b;
+    color: white;
+    box-shadow: 0 2px 5px rgba(255, 107, 107, 0.5);
+}
+/* --- 기존 코드는 그대로 두고 아래 내용만 추가 --- */
+
+.button-group {
+    flex-wrap: wrap; /* 버튼이 많아지면 다음 줄로 넘어가게 설정 */
+    margin-bottom: 20px;
+}
+
+/* 선택 완료 버튼 디자인 */
+.submit-btn {
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+.submit-btn:hover {
+    background-color: #555;
+}
+
+/* 결과 출력 영역 디자인 */
+.result-area {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 2px dashed #ddd;
+}
+
+.result-area h2 {
+    font-size: 1.5rem;
+    color: #ff6b6b;
+    margin-bottom: 15px;
+}
+
+#food-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+#food-list li {
+    font-size: 1.2rem;
+    color: #444;
+    background-color: #ffeaea;
+    margin: 5px auto;
+    padding: 10px;
+    border-radius: 8px;
+    width: 60%;
+    font-weight: bold;
+}
+
+/* --- 기존 CSS 맨 아래에 추가/수정 --- */
+
+/* 💡 추가된 핵심 기능: 이 클래스가 붙은 요소는 화면에서 완전히 사라집니다 */
+.hidden {
+    display: none !important;
+}
+
+/* 결과 출력 영역 디자인 수정 (단독으로 뜰 것이므로 위쪽 점선 제거) */
+.result-area {
+    margin-top: 20px;
+    padding-top: 10px;
+}
+
+.result-area h2 {
+    font-size: 1.5rem;
+    color: #ff6b6b;
+    margin-bottom: 15px;
+}
+
+#food-list {
+    list-style-type: none;
+    padding: 0;
+    margin-bottom: 20px; /* 다시하기 버튼과의 간격 */
+}
+
+#food-list li {
+    font-size: 1.2rem;
+    color: #444;
+    background-color: #ffeaea;
+    margin: 5px auto;
+    padding: 10px;
+    border-radius: 8px;
+    width: 60%;
+    font-weight: bold;
+}
+
+/* 다시 고르기 버튼 디자인 */
+.reset-btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #ddd;
+    color: #333;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.reset-btn:hover {
+    background-color: #bbb;
+}

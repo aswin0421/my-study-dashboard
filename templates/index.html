@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘 뭐 먹지?</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>오늘 뭐 먹지?</h1>
+
+        <div id="category-area" class="category-section">
+            <p>원하는 카테고리를 모두 선택해 보세요</p>
+            <div class="button-group">
+                <button class="category-btn" data-category="매운맛">매운맛 🌶️</button>
+                <button class="category-btn" data-category="분식">분식 🍢</button>
+                <button class="category-btn" data-category="면">면 🍜</button>
+                <button class="category-btn" data-category="국물">국물 🍲</button>
+                <button class="category-btn" data-category="고기">고기 🥩</button>
+                <button class="category-btn" data-category="밥">밥 🍚</button>
+            </div>
+
+            <button id="submit-btn" class="submit-btn">선택 완료</button>
+        </div>
+
+        <div id="result-area" class="result-area hidden">
+            <h2 id="result-title">추천 메뉴는?</h2>
+            <ul id="food-list">
+                </ul>
+            <button id="reset-btn" class="reset-btn">다시 고르기 🔄</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
