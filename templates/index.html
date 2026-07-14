@@ -3,35 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>오늘 뭐 먹지?</title>
+    <title>My Devsign project</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>오늘 뭐 먹지?</h1>
-
-        <div id="category-area" class="category-section">
-            <p>원하는 카테고리를 모두 선택해 보세요</p>
-            <div class="button-group">
-                <button class="category-btn" data-category="매운맛">매운맛 🌶️</button>
-                <button class="category-btn" data-category="분식">분식 🍢</button>
-                <button class="category-btn" data-category="면">면 🍜</button>
-                <button class="category-btn" data-category="국물">국물 🍲</button>
-                <button class="category-btn" data-category="고기">고기 🥩</button>
-                <button class="category-btn" data-category="밥">밥 🍚</button>
+        <header class="profile-header">
+            <div class="header-left">
+                <h1 class="project-title">Only For Me</h1>
+                <p class="profile-desc">컴공 23 박내훈 | devsign project</p>
             </div>
 
-            <button id="submit-btn" class="submit-btn">선택 완료</button>
-        </div>
+            <div id="spotify-widget" class="spotify-widget">
+                <div id="spotify-cover" class="spotify-cover-placeholder">🎵</div>
+                <div class="spotify-info">
+                    <p id="spotify-title">음악 연동 준비 중...</p>
+                    <p id="spotify-artist">Spotify API</p>
+                </div>
+            </div>
+        </header>
+<section class="calendar-section">
+    <div class="calendar-header">
+        <button class="cal-btn" id="prev-month">&lt;</button>
+        <h2 id="month-year">2026년 7월</h2>
+        <button class="cal-btn" id="next-month">&gt;</button>
+    </div>
+    <div class="calendar-weekdays">
+        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+    </div>
+    <div class="calendar-grid" id="calendar-days"></div>
+</section>
+        <main class="dashboard">
+            <div class="card">
+                <h2>C / C++ 공부일지</h2>
+            </div>
 
-        <div id="result-area" class="result-area hidden">
-            <h2 id="result-title">추천 메뉴는?</h2>
-            <ul id="food-list">
-                </ul>
-            <button id="reset-btn" class="reset-btn">다시 고르기 🔄</button>
+            <div class="card">
+                <h2>TOEIC 공부일지</h2>
+            </div>
+
+            <div class="card">
+                <h2>웹 서비스 프로젝트</h2>
+                <p>Python Flask 기반의 나만의 웹사이트 제작</p>
+            </div>
+
+            <div class="card" data-url="/certification">
+            <h2>자격증 준비일지</h2>
+            </div>
+     </main>
+    </div>
+    <div id="memo-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="modal-date-title">일정 입력</h3>
+            <textarea id="memo-input" placeholder="여기에 일정을 적어주세요..."></textarea>
+            <div class="modal-buttons">
+                <button id="save-memo-btn" class="modal-btn save">저장</button>
+                <button id="delete-memo-btn" class="modal-btn delete">삭제</button>
+                <button id="close-modal-btn" class="modal-btn close">취소</button>
+            </div>
         </div>
     </div>
+    <div id="spotify-modal" class="modal-overlay hidden">
+        <div class="modal-content spotify-modal-content">
+            <button id="close-spotify-btn" class="close-btn">&times;</button>
 
+            <img id="modal-spotify-cover" src="" alt="Album Cover" class="modal-album-art">
+
+            <h3 id="modal-spotify-title">노래 제목</h3>
+            <p id="modal-spotify-artist">아티스트 이름</p>
+            <p id="modal-spotify-album" class="album-name">앨범 이름</p>
+
+            <a id="modal-spotify-link" href="#" target="_blank" class="spotify-link-btn">Spotify에서 듣기</a>
+        </div>
+    </div>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

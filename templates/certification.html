@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자격증 준비일지 - Only For Me</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="profile-header">
+            <div class="header-left">
+                <h1 class="project-title"><a href="/" style="color: inherit; text-decoration: none;">Only For Me</a></h1>
+                <p class="profile-desc">컴공 23 박내훈 | devsign project</p>
+            </div>
+
+            <div id="spotify-widget" class="spotify-widget">
+                <div id="spotify-cover" class="spotify-cover-placeholder">🎵</div>
+                <div class="spotify-info">
+                    <p id="spotify-title">음악 연동 준비 중...</p>
+                    <p id="spotify-artist">Spotify API</p>
+                </div>
+            </div>
+        </header>
+
+        <main class="sub-page-content">
+            <h2 class="sub-page-title">자격증 준비일지</h2>
+
+            <div class="log-layout">
+
+                <section class="todo-section">
+                    <h3> <input type="date" id="todo-date-picker" class="todo-date-picker"> Todo </h3>
+                    <div class="todo-input-group">
+                        <input type="text" id="todo-input" placeholder="할 일 입력...">
+                        <button id="add-todo-btn">+</button>
+                    </div>
+                    <ul id="todo-list" class="todo-list">
+                    </ul>
+                </section>
+
+                <section class="log-section">
+                    <h3>📝 TODAY STUDY</h3>
+
+                    <div class="log-inner-layout">
+
+                        <div class="log-write-area">
+                            <input type="text" id="log-title" class="log-title-input" >
+
+                            <textarea id="log-content" class="log-textarea"></textarea>
+
+                            <div class="file-upload-group">
+                                <label for="image-upload" class="upload-btn image-btn">📷 Add Pic</label>
+                                <input type="file" id="image-upload" accept="image/*" class="hidden-file">
+
+                                <label for="file-upload" class="upload-btn doc-btn">📁 Add File</label>
+                                <input type="file" id="file-upload" class="hidden-file">
+                            </div>
+
+                            <p id="attached-file-info" class="file-info-text">NO FILE</p>
+
+                            <button id="save-log-btn" class="save-log-btn">SAVE</button>
+                        </div>
+
+                        <div class="log-list-area">
+                            <h4 class="list-title">📚 STUDY LIST</h4>
+                            <ul class="saved-log-list">
+                            </ul>
+                        </div>
+
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="spotify-modal" class="modal-overlay hidden">
+        <div class="modal-content spotify-modal-content">
+            <button id="close-spotify-btn" class="close-btn">&times;</button>
+            <img id="modal-spotify-cover" src="" alt="Album Cover" class="modal-album-art">
+            <h3 id="modal-spotify-title">노래 제목</h3>
+            <p id="modal-spotify-artist">아티스트 이름</p>
+            <p id="modal-spotify-album" class="album-name">앨범 이름</p>
+            <a id="modal-spotify-link" href="#" target="_blank" class="spotify-link-btn">Spotify에서 듣기</a>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
