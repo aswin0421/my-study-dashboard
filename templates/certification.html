@@ -84,7 +84,13 @@
             <a id="modal-spotify-link" href="#" target="_blank" class="spotify-link-btn">Spotify에서 듣기</a>
         </div>
     </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.ENV = {
+            SUPABASE_URL: "{{ supabase_url }}",
+            SUPABASE_KEY: "{{ supabase_key }}"
+        };
+    </script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

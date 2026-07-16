@@ -1,12 +1,16 @@
-from flask import Flask, render_template ,jsonify , request
+from flask import Flask, render_template ,jsonify,request
+import os
+from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
+load_dotenv()
+
 app = Flask(__name__)
 #발급받은 스포티파이 키를 입력
-SPOTIPY_CLIENT_ID = '19f0f8675ca74d41b0dc00eb3b1100c0'
-SPOTIPY_CLINET_SECRET = '19019ec34b97408596a3dcff2b52be5d'
-SPOTIPY_REDIRECT_URI = 'http://127.0.0.1:5000/callback'
+SPOTIPY_CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
+SPOTIPY_CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
+SPOTIPY_REDIRECT_URI = os.getenv('SPOTIPY_REDIRECT_URI')
 
 #현재 재생 상태 정보를 읽어오기 위한 권한 설정
 scope = "user-read-currently-playing user-read-playback-state"
@@ -14,7 +18,7 @@ scope = "user-read-currently-playing user-read-playback-state"
 # OAuth 인증 객체 생성 (로컬에 .cache 파일로 토큰 자동 관리)
 sp_oauth = SpotifyOAuth(
     client_id=SPOTIPY_CLIENT_ID,
-    client_secret=SPOTIPY_CLINET_SECRET,
+    client_secret=SPOTIPY_CLIENT_SECRET,
     redirect_uri=SPOTIPY_REDIRECT_URI,
     scope=scope,
     cache_path=".cache"
@@ -26,7 +30,11 @@ def home():
 #자격증 준비일지 서브 페이지 라우트
 @app.route('/certification')
 def certification():
-    return render_template('certification.html')
+    return render_template(
+        'certification.html',
+        supabase_url=os.getenv('SUPABASE_URL'),
+        supabase_key=os.getenv('SUPABASE_URL')
+    )
 #최초 인증시 스포티파이를 로그인하고 돌아오는 주소
 @app.route('/callback')
 def callback():
