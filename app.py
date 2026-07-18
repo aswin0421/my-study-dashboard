@@ -25,7 +25,11 @@ sp_oauth = SpotifyOAuth(
 )
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template(
+        'index.html',
+        supabase_url=os.getenv('SUPABASE_URL'),
+        supabase_key=os.getenv('SUPABASE_KEY')
+    )
 
 #자격증 준비일지 서브 페이지 라우트
 @app.route('/certification')
@@ -33,7 +37,7 @@ def certification():
     return render_template(
         'certification.html',
         supabase_url=os.getenv('SUPABASE_URL'),
-        supabase_key=os.getenv('SUPABASE_URL')
+        supabase_key=os.getenv('SUPABASE_KEY')
     )
 #최초 인증시 스포티파이를 로그인하고 돌아오는 주소
 @app.route('/callback')

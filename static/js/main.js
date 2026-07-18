@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // === [0] Supabase 클라우드 데이터베이스 초기화 ===
@@ -49,7 +50,29 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEditingMonth = null;
     let currentEditingYear = null;
 
-    function renderCalendar(month, year) {
+    // 캘린더 데이터 불러오기 함수
+    async function loadCalendarMemo(dateKey) {
+        if (!supabase) {
+            console.error("수파베이스가 연결되지 않았습니다.");
+            return '';
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('calendar')
+                .select('content')
+                .eq('event_date', dateKey)
+                .maybeSingle();
+
+            if (error) throw error;
+            return data ? data.content : '';
+        } catch (err) {
+            console.error("캘린더 로드 에러:", err);
+            return '';
+        }
+    }
+
+    async function renderCalendar(month, year) {
         if (!calendarDays || !monthYear) return;
         calendarDays.innerHTML = '';
         const months = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
@@ -80,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const memoKey = `memo_${year}_${month}_${i}`;
-            const savedMemo = localStorage.getItem(memoKey);
+            const savedMemo = await loadCalendarMemo(memoKey);
 
             if (savedMemo) {
                 const memoDot = document.createElement('span');
@@ -123,18 +146,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // === [3] 모달 창 내부 버튼 동작 설정 ===
-    function closeModal() {
+    async function closeModal() {
         if (modal) modal.classList.add('hidden');
         currentEditingKey = null;
     }
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
 
     if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
+        saveBtn.addEventListener('click', async () => {
             if (currentEditingKey && memoInput) {
                 const text = memoInput.value.trim();
-                if (text === "") localStorage.removeItem(currentEditingKey);
-                else localStorage.setItem(currentEditingKey, text);
+
+                if (!supabase) {
+                    alert("⚠️ 클라우드 연결이 확인되지 않아 저장할 수 없습니다.");
+                    return;
+                }
+
+                // 클라우드(수파베이스)에 저장
+                const { error } = await supabase
+                    .from('calendar')
+                    .upsert({ event_date: currentEditingKey, content: text });
+
+                if (error) {
+                    alert("❌ 달력 저장 실패: " + error.message);
+                    return;
+                }
+
                 renderCalendar(currentEditingMonth, currentEditingYear);
                 closeModal();
             }
@@ -142,9 +179,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => {
+        deleteBtn.addEventListener('click', async () => {
             if (currentEditingKey) {
-                localStorage.removeItem(currentEditingKey);
+                if (!supabase) {
+                    alert("⚠️ 클라우드 연결이 확인되지 않아 삭제할 수 없습니다.");
+                    return;
+                }
+
+                // 클라우드(수파베이스)에서 데이터 삭제
+                const { error } = await supabase
+                    .from('calendar')
+                    .delete()
+                    .eq('event_date', currentEditingKey);
+
+                if (error) {
+                    alert("❌ 달력 삭제 실패: " + error.message);
+                    return;
+                }
+
                 renderCalendar(currentEditingMonth, currentEditingYear);
                 closeModal();
             }
@@ -407,39 +459,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // [일지 저장 버튼 작동 로직]
     if (saveLogBtn) {
         saveLogBtn.addEventListener('click', async () => {
             const title = logTitleInput.value.trim();
             const content = logContentInput.value.trim();
 
-            if (title === '' || !supabase) {
-                if(title === '') alert('일지 제목을 입력해주세요!');
+            if (title === '') {
+                alert('일지 제목을 입력해주세요!');
                 return;
             }
 
             const today = new Date();
             const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
 
-            const { error } = await supabase
-                .from('logs')
-                .insert([{ log_date: dateStr, title: title, content: content }]);
+            try {
+                // 1. 수파베이스로 데이터 전송
+                const { error } = await supabase
+                    .from('logs')
+                    .insert([
+                        { log_date: dateStr, title: title, content: content }
+                    ]);
 
-            if (error) {
-                console.error('일지 저장 에러:', error);
-                return;
+                // 2. 수파베이스가 저장을 거부했을 경우 (원인 즉시 파악)
+                if (error) {
+                    alert(`수파베이스 저장 실패!\n원인: ${error.message}`);
+                    console.error("저장 에러 상세:", error);
+                    return; // 에러가 났으니 여기서 멈춤
+                }
+
+                // 3. 저장이 성공했을 경우
+                logTitleInput.value = '';
+                logContentInput.value = '';
+                alert('일지가 성공적으로 저장되었습니다!');
+
+                // 4. 화면 오른쪽 리스트를 다시 그려주는 함수 실행
+                if (typeof renderLogs === 'function') {
+                    renderLogs();
+                }
+
+            } catch (err) {
+                alert(`알 수 없는 통신 오류 발생!\n원인: ${err.message}`);
             }
-
-            logTitleInput.value = '';
-            logContentInput.value = '';
-            if (fileInfoText) {
-                fileInfoText.innerText = '첨부된 파일이 없습니다.';
-                fileInfoText.style.color = '#888';
-                fileInfoText.style.fontWeight = 'normal';
-            }
-
-            renderLogs();
         });
-
-        renderLogs();
     }
 });
