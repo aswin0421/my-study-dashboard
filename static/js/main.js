@@ -450,16 +450,43 @@ document.addEventListener('DOMContentLoaded', () => {
             li.appendChild(titleSpan);
             li.appendChild(deleteBtn);
 
+            // [여기서부터 복사하세요]
             li.addEventListener('click', () => {
+                // 1. 클릭 시 텍스트(제목, 내용) 채워주기
                 logTitleInput.value = log.title;
                 logContentInput.value = log.content;
-            });
 
+                // 2. 클릭 시 사진과 파일 띄워주기 (큼직한 정사각형 적용!)
+                const previewArea = document.getElementById('log-attachment-preview');
+                if (previewArea) {
+                    previewArea.innerHTML = ''; // 다른 일지를 눌렀을 때 이전 사진 지우기
+
+                    // 📷 이미지가 있으면 잘리지 않고 원본 비율대로 다 보이게 띄우기 (클릭 시 모달 열기)
+                    if (log.image_url) {
+                        previewArea.innerHTML += `
+                            <div style="margin-bottom: 15px;">
+                                <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold; color: #aaa;">📷 첨부된 이미지 <span style="font-size: 12px; font-weight: normal; color: #4ade80;">(클릭하여 크게 보기)</span></p>
+                                <img src="${log.image_url}" onclick="openImageModal('${log.image_url}')" style="width: 100%; height: auto; border-radius: 8px; border: 1px solid #444; display: block; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                            </div>`;
+                    }
+
+                    // 📎 일반 파일이 있으면 다운로드 버튼 만들기
+                    if (log.file_url) {
+                        previewArea.innerHTML += `
+                            <div>
+                                <a href="${log.file_url}" target="_blank" style="display: inline-block; padding: 8px 12px; background-color: #f1f3f5; border-radius: 5px; text-decoration: none; color: #333; font-weight: bold; font-size: 14px; border: 1px solid #dee2e6;">
+                                    📎 첨부파일 열기 / 다운로드
+                                </a>
+                            </div>`;
+                    }
+                }
+            });
+            // [여기까지 복사해서 기존 코드와 교체하세요]
             savedLogList.appendChild(li);
         });
     }
 
-    // [일지 저장 버튼 작동 로직]
+// [일지 저장 및 파일 업로드 버튼 작동 로직]
     if (saveLogBtn) {
         saveLogBtn.addEventListener('click', async () => {
             const title = logTitleInput.value.trim();
@@ -470,39 +497,98 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const today = new Date();
-            const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
+            if (!supabase) {
+                alert("⚠️ 클라우드 연결이 확인되지 않아 저장할 수 없습니다.");
+                return;
+            }
+
+            // 업로드 중 여러 번 눌리는 것 방지
+            saveLogBtn.disabled = true;
+            const originalBtnText = saveLogBtn.innerText;
+            saveLogBtn.innerText = '저장 중...⏳';
 
             try {
-                // 1. 수파베이스로 데이터 전송
-                const { error } = await supabase
-                    .from('logs')
-                    .insert([
-                        { log_date: dateStr, title: title, content: content }
-                    ]);
+                let imageUrl = null;
+                let fileUrl = null;
 
-                // 2. 수파베이스가 저장을 거부했을 경우 (원인 즉시 파악)
-                if (error) {
-                    alert(`수파베이스 저장 실패!\n원인: ${error.message}`);
-                    console.error("저장 에러 상세:", error);
-                    return; // 에러가 났으니 여기서 멈춤
+                // 1. [사진 업로드] 이미지가 첨부되었다면 Storage에 올리고 URL 받아오기
+                if (imageUpload && imageUpload.files.length > 0) {
+                    const file = imageUpload.files[0];
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `img_${Date.now()}.${fileExt}`; // 이름이 안 겹치게 현재 시간 추가
+
+                    const { error: uploadError } = await supabase.storage
+                        .from('log_files')
+                        .upload(fileName, file);
+
+                    if (uploadError) throw uploadError;
+
+                    const { data: publicUrlData } = supabase.storage
+                        .from('log_files')
+                        .getPublicUrl(fileName);
+                    imageUrl = publicUrlData.publicUrl;
                 }
 
-                // 3. 저장이 성공했을 경우
+                // 2. [일반 파일 업로드] 파일이 첨부되었다면 Storage에 올리고 URL 받아오기
+                if (fileUpload && fileUpload.files.length > 0) {
+                    const file = fileUpload.files[0];
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `file_${Date.now()}.${fileExt}`;
+
+                    const { error: uploadError } = await supabase.storage
+                        .from('log_files')
+                        .upload(fileName, file);
+
+                    if (uploadError) throw uploadError;
+
+                    const { data: publicUrlData } = supabase.storage
+                        .from('log_files')
+                        .getPublicUrl(fileName);
+                    fileUrl = publicUrlData.publicUrl;
+                }
+
+                // 3. [데이터베이스 저장] 텍스트 내용과 발급받은 파일 URL들을 DB에 함께 기록하기
+                const today = new Date();
+                const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
+
+                const { error: dbError } = await supabase
+                    .from('logs')
+                    .insert([{
+                        log_date: dateStr,
+                        title: title,
+                        content: content,
+                        image_url: imageUrl,
+                        file_url: fileUrl
+                    }]);
+
+                if (dbError) throw dbError;
+
+                // 4. 성공 시 입력칸 깔끔하게 초기화
                 logTitleInput.value = '';
                 logContentInput.value = '';
-                alert('일지가 성공적으로 저장되었습니다!');
+                if(imageUpload) imageUpload.value = '';
+                if(fileUpload) fileUpload.value = '';
+                updateFileInfo(); // 파일 이름 표시 지우는 함수 호출
+                const previewArea = document.getElementById('log-attachment-preview');
+                if (previewArea) previewArea.innerHTML = '';
 
-                // 4. 화면 오른쪽 리스트를 다시 그려주는 함수 실행
+                alert('일지와 첨부파일이 성공적으로 클라우드에 저장되었습니다!');
+
+                // 화면 리스트 새로고침
                 if (typeof renderLogs === 'function') {
                     renderLogs();
                 }
 
             } catch (err) {
-                alert(`알 수 없는 통신 오류 발생!\n원인: ${err.message}`);
+                alert(`저장 실패!\n원인: ${err.message}`);
+                console.error("저장 에러 상세:", err);
+            } finally {
+                // 버튼 상태 원상복구
+                saveLogBtn.disabled = false;
+                saveLogBtn.innerText = originalBtnText;
             }
         });
-    }// ==========================================
+    }
     // === [8] 자격증 페이지: 초기 데이터 한 번에 불러오기 ===
     // ==========================================
     // 페이지가 로드되자마자 실행되어 화면에 데이터를 채워주는 역할입니다.
@@ -512,5 +598,33 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("🚀 자격증 페이지 진입: 저장된 일지 데이터를 불러옵니다.");
         renderLogs(); // 만들어둔 일지 불러오기 함수 즉시 실행!
     }
+    // ==========================================
+    // === [9] 사진 크게 보기 모달 제어 ===
+    // ==========================================
+    const imageModal = document.getElementById('image-modal');
+    const modalFullImage = document.getElementById('modal-full-image');
+    const closeImageModalBtn = document.getElementById('close-image-modal-btn');
 
+    // 썸네일 사진을 클릭하면 실행되는 함수
+    window.openImageModal = function(url) {
+        if (imageModal && modalFullImage) {
+            modalFullImage.src = url; // 큰 사진 액자에 클릭한 사진 주소 넣기
+            imageModal.style.display = 'flex'; // 모달 화면에 띄우기
+        }
+    };
+
+    // X 버튼을 누르거나, 사진 바깥 검은 배경을 누르면 모달 닫기
+    if (imageModal && closeImageModalBtn) {
+        const closeModal = () => {
+            imageModal.style.display = 'none';
+            modalFullImage.src = ''; // 닫을 때 사진 주소 비워주기
+        };
+
+        closeImageModalBtn.addEventListener('click', closeModal);
+        imageModal.addEventListener('click', (e) => {
+            if (e.target === imageModal) {
+                closeModal();
+            }
+        });
+    }
 });

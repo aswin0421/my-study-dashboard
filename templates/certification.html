@@ -45,6 +45,7 @@
 
                         <div class="log-write-area">
                             <input type="text" id="log-title" class="log-title-input" >
+                        <div id="log-attachment-preview" style="margin-top: 15px;"></div>
 
                             <textarea id="log-content" class="log-textarea"></textarea>
 
@@ -92,5 +93,17 @@
         };
     </script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<!-- ========================================== -->
+    <!-- === 사진 크게 보기 모달 (숨겨져 있음) === -->
+    <!-- ========================================== -->
+    <div id="image-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.85); z-index: 9999; flex-direction: column; justify-content: center; align-items: center;">
+
+        <!-- 닫기 버튼 -->
+        <button id="close-image-modal-btn" style="position: absolute; top: 30px; right: 40px; background: none; border: none; color: white; font-size: 40px; cursor: pointer;">&times;</button>
+
+        <!-- 원본 크기로 보여줄 진짜 사진 -->
+        <img id="modal-full-image" src="" style="max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+
+    </div>
 </body>
 </html>
