@@ -32,10 +32,10 @@ def home():
     )
 
 #자격증 준비일지 서브 페이지 라우트
-@app.route('/certification')
+@app.route('/webservice')
 def certification():
     return render_template(
-        'certification.html',
+        'webservice.html',
         supabase_url=os.getenv('SUPABASE_URL'),
         supabase_key=os.getenv('SUPABASE_KEY')
     )
