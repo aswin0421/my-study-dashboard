@@ -31,9 +31,9 @@ def home():
         supabase_key=os.getenv('SUPABASE_KEY')
     )
 
-#자격증 준비일지 서브 페이지 라우트
+#웹 서비스 프로젝트 서브 페이지 라우트
 @app.route('/webservice')
-def certification():
+def webservice():
     return render_template(
         'webservice.html',
         supabase_url=os.getenv('SUPABASE_URL'),
@@ -45,9 +45,12 @@ def callback():
     try:
         # 1. 스포티파이가 URL에 달아준 인증 코드(code)를 뽑아옵니다.
         code = request.args.get('code')
+        if not code:
+            # 사용자가 스포티파이 로그인 화면에서 '취소'를 누른 경우
+            return "인증 실패: 스포티파이 로그인이 취소되었습니다."
 
         # 2. 이 코드를 제출해서 최종 로그인 토큰(권한)을 발급받아 .cache 파일에 저장합니다.
-        sp_oauth.get_access_token(code)
+        sp_oauth.get_access_token(code, as_dict=False)
         return """
         <html>
             <body style="background-color:#000; color:#fff; font-family:sans-serif; text-align:center; padding-top:100px;">
@@ -61,12 +64,12 @@ def callback():
         return f"인증 실패: {str(e)}"
 
 
-# 🎵 자바스크립트가 실시간(10초 주기)으로 호출할 음악 정보 데이터 API
+# 🎵 자바스크립트가 실시간(5초 주기)으로 호출할 음악 정보 데이터 API
 @app.route('/api/spotify')
 def get_spotify_status():
     try:
-        # 내부에 저장된 로그인 토큰 정보 확인
-        token_info = sp_oauth.get_cached_token()
+        # 내부에 저장된 로그인 토큰 정보 확인 (만료됐으면 자동으로 갱신)
+        token_info = sp_oauth.validate_token(sp_oauth.cache_handler.get_cached_token())
 
         # 만약 로그인 기록이 아예 없다면 자바스크립트에게 로그인 URL을 던져줌
         if not token_info:
@@ -78,19 +81,25 @@ def get_spotify_status():
         current_track = sp.current_playback()
 
         # 현재 사용자가 노래를 재생 중인 경우 데이터 정제
-        if current_track and current_track.get('is_playing'):
+        # (광고·팟캐스트 재생 중에는 item이 비어 있을 수 있음)
+        if current_track and current_track.get('is_playing') and current_track.get('item'):
             track_item = current_track['item']
             title = track_item['name']
 
             # 가수가 여러 명일 수 있으므로 쉼표로 묶기
             artists = ", ".join([artist['name'] for artist in track_item['artists']])
 
-            # 앨범 커버 이미지 URL 추출
-            album_cover = track_item['album']['images'][1]['url'] if len(track_item['album']['images']) > 1 else \
-            track_item['album']['images'][0]['url']
+            # 앨범 커버 이미지 URL 추출 (로컬 파일 곡은 이미지가 없을 수 있음)
+            images = track_item['album']['images']
+            if len(images) > 1:
+                album_cover = images[1]['url']
+            elif images:
+                album_cover = images[0]['url']
+            else:
+                album_cover = None
 
             album_name = track_item['album']['name']
-            spotipy_link = track_item['external_urls']['spotify']
+            spotipy_link = track_item['external_urls'].get('spotify')
             return jsonify({
                 "status": "playing",
                 "title": title,

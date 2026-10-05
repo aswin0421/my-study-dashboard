@@ -330,7 +330,7 @@ body {
     color: #aaaaaa;
     font-size: 0.8rem;
     white-space: nowrap;
-    overflow: hidden:
+    overflow: hidden;
     text-overflow: ellipsis;
 }
 /* --- 스포티파이 상세 모달 전용 디자인 --- */

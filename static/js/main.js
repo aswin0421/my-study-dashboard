@@ -11,6 +11,29 @@ document.addEventListener('DOMContentLoaded', () => {
         supabase = window.supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_KEY);
     }
 
+    // 현재 서브 페이지의 카테고리 (예: <main data-category="webservice">)
+    // 투두와 일지 데이터를 카테고리별로 나눠서 저장/조회하기 위해 사용합니다.
+    const pageCategoryEl = document.querySelector('[data-category]');
+    const pageCategory = pageCategoryEl ? pageCategoryEl.dataset.category : null;
+
+    // 날짜를 'YYYY-MM-DD' 문자열로 바꿔주는 함수 (투두·일지 공용)
+    function formatDate(d) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    // DB에서 꺼낸 주소가 http(s) 주소인지 확인 (javascript: 같은 위험한 주소 차단)
+    function isSafeUrl(url) {
+        try {
+            const parsed = new URL(url);
+            return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+        } catch (e) {
+            return false;
+        }
+    }
+
     // ==========================================
     // === [1] 카드 클릭 알림창 및 페이지 이동 ===
     // ==========================================
@@ -50,36 +73,54 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEditingMonth = null;
     let currentEditingYear = null;
 
-    // 캘린더 데이터 불러오기 함수
-    async function loadCalendarMemo(dateKey) {
+    // 캘린더 메모 저장 키 (기존 데이터와 호환되도록 월은 0부터 시작하는 형식 유지)
+    function calendarKey(year, month, day) {
+        return `memo_${year}_${month}_${day}`;
+    }
+
+    // 한 달치 메모를 요청 한 번으로 불러오기 → { 'memo_2026_9_6': '내용', ... }
+    async function loadMonthMemos(month, year, daysInMonth) {
         if (!supabase) {
             console.error("수파베이스가 연결되지 않았습니다.");
-            return '';
+            return {};
         }
+
+        const keys = [];
+        for (let i = 1; i <= daysInMonth; i++) keys.push(calendarKey(year, month, i));
 
         try {
             const { data, error } = await supabase
                 .from('calendar')
-                .select('content')
-                .eq('event_date', dateKey)
-                .maybeSingle();
+                .select('event_date, content')
+                .in('event_date', keys);
 
             if (error) throw error;
-            return data ? data.content : '';
+
+            const memos = {};
+            (data || []).forEach(row => { memos[row.event_date] = row.content; });
+            return memos;
         } catch (err) {
             console.error("캘린더 로드 에러:", err);
-            return '';
+            return {};
         }
     }
 
+    // 이전/다음 달 버튼을 빠르게 연타했을 때, 늦게 도착한 옛날 달 데이터가 화면을 덮어쓰지 않게 하는 번호표
+    let calendarRenderId = 0;
+
     async function renderCalendar(month, year) {
         if (!calendarDays || !monthYear) return;
-        calendarDays.innerHTML = '';
-        const months = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
-        monthYear.innerText = `${year}년 ${months[month]}`;
+        const renderId = ++calendarRenderId;
 
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        const memos = await loadMonthMemos(month, year, daysInMonth);
+        if (renderId !== calendarRenderId) return; // 기다리는 사이 다른 달로 이동했으면 이 결과는 버림
+
+        calendarDays.innerHTML = '';
+        const months = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+        monthYear.innerText = `${year}년 ${months[month]}`;
 
         for (let i = 0; i < firstDay; i++) {
             const emptyDiv = document.createElement('div');
@@ -102,8 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 dayDiv.classList.add('today');
             }
 
-            const memoKey = `memo_${year}_${month}_${i}`;
-            const savedMemo = await loadCalendarMemo(memoKey);
+            const memoKey = calendarKey(year, month, i);
+            const savedMemo = memos[memoKey] || '';
 
             if (savedMemo) {
                 const memoDot = document.createElement('span');
@@ -237,16 +278,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     spotifyWidget.style.cursor = 'pointer';
                     spotifyWidget.onclick = () => window.open(data.auth_url, '_blank');
                 } else if (data.status === 'playing') {
-                    spotifyCover.innerHTML = `<img src="${data.cover}" class="spotify-cover-img" alt="Album Cover">`;
+                    if (data.cover) {
+                        const coverImg = document.createElement('img');
+                        coverImg.src = data.cover;
+                        coverImg.className = 'spotify-cover-img';
+                        coverImg.alt = 'Album Cover';
+                        spotifyCover.replaceChildren(coverImg);
+                    } else {
+                        spotifyCover.innerText = '🎵';
+                    }
                     spotifyTitle.innerText = data.title;
                     spotifyArtist.innerText = data.artist;
                     spotifyWidget.style.cursor = 'pointer';
                     spotifyWidget.onclick = () => {
-                        if (modalCover) modalCover.src = data.cover;
+                        if (modalCover) modalCover.src = data.cover || '';
                         if (spotifyModalTitle) spotifyModalTitle.innerText = data.title;
                         if (modalArtist) modalArtist.innerText = data.artist;
                         if (modalAlbum) modalAlbum.innerText = data.album;
-                        if (modalLink) modalLink.href = data.link;
+                        if (modalLink) modalLink.href = data.link || '#';
                         if (spotifyModal) spotifyModal.classList.remove('hidden');
                     };
                 } else {
@@ -281,6 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data, error } = await supabase
             .from('todos')
             .select('*')
+            .eq('category', pageCategory)
             .eq('todo_date', currentDateStr)
             .order('id', { ascending: true });
 
@@ -293,11 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (todoDatePicker) {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        const todayStr = `${yyyy}-${mm}-${dd}`;
+        const todayStr = formatDate(new Date());
 
         todoDatePicker.value = todayStr;
         loadTodosForDate(todayStr);
@@ -353,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const { error } = await supabase
             .from('todos')
-            .insert([{ todo_date: currentDateStr, task_text: text, completed: false }]);
+            .insert([{ category: pageCategory, todo_date: currentDateStr, task_text: text, completed: false }]);
 
         if (error) {
             console.error('Todo 추가 에러:', error);
@@ -412,6 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data: logs, error } = await supabase
             .from('logs')
             .select('*')
+            .eq('category', pageCategory)
             .order('id', { ascending: false });
 
         if (error) {
@@ -450,38 +497,49 @@ document.addEventListener('DOMContentLoaded', () => {
             li.appendChild(titleSpan);
             li.appendChild(deleteBtn);
 
-            // [여기서부터 복사하세요]
             li.addEventListener('click', () => {
                 // 1. 클릭 시 텍스트(제목, 내용) 채워주기
                 logTitleInput.value = log.title;
                 logContentInput.value = log.content;
 
-                // 2. 클릭 시 사진과 파일 띄워주기 (큼직한 정사각형 적용!)
+                // 2. 클릭 시 사진과 파일 띄워주기
+                // (DB 값을 innerHTML 문자열에 끼워 넣으면 악성 스크립트가 실행될 수 있어서, 요소를 직접 만들어 붙입니다)
                 const previewArea = document.getElementById('log-attachment-preview');
                 if (previewArea) {
                     previewArea.innerHTML = ''; // 다른 일지를 눌렀을 때 이전 사진 지우기
 
                     // 📷 이미지가 있으면 잘리지 않고 원본 비율대로 다 보이게 띄우기 (클릭 시 모달 열기)
-                    if (log.image_url) {
-                        previewArea.innerHTML += `
-                            <div style="margin-bottom: 15px;">
-                                <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold; color: #aaa;">📷 첨부된 이미지 <span style="font-size: 12px; font-weight: normal; color: #4ade80;">(클릭하여 크게 보기)</span></p>
-                                <img src="${log.image_url}" onclick="openImageModal('${log.image_url}')" style="width: 100%; height: auto; border-radius: 8px; border: 1px solid #444; display: block; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
-                            </div>`;
+                    if (log.image_url && isSafeUrl(log.image_url)) {
+                        const imageBox = document.createElement('div');
+                        imageBox.style.marginBottom = '15px';
+                        imageBox.innerHTML = `<p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold; color: #aaa;">📷 첨부된 이미지 <span style="font-size: 12px; font-weight: normal; color: #4ade80;">(클릭하여 크게 보기)</span></p>`;
+
+                        const img = document.createElement('img');
+                        img.src = log.image_url;
+                        img.style.cssText = 'width: 100%; height: auto; border-radius: 8px; border: 1px solid #444; display: block; cursor: pointer; transition: opacity 0.2s;';
+                        img.addEventListener('mouseover', () => { img.style.opacity = 0.8; });
+                        img.addEventListener('mouseout', () => { img.style.opacity = 1; });
+                        img.addEventListener('click', () => window.openImageModal(log.image_url));
+
+                        imageBox.appendChild(img);
+                        previewArea.appendChild(imageBox);
                     }
 
                     // 📎 일반 파일이 있으면 다운로드 버튼 만들기
-                    if (log.file_url) {
-                        previewArea.innerHTML += `
-                            <div>
-                                <a href="${log.file_url}" target="_blank" style="display: inline-block; padding: 8px 12px; background-color: #f1f3f5; border-radius: 5px; text-decoration: none; color: #333; font-weight: bold; font-size: 14px; border: 1px solid #dee2e6;">
-                                    📎 첨부파일 열기 / 다운로드
-                                </a>
-                            </div>`;
+                    if (log.file_url && isSafeUrl(log.file_url)) {
+                        const fileBox = document.createElement('div');
+                        const fileLink = document.createElement('a');
+                        fileLink.href = log.file_url;
+                        fileLink.target = '_blank';
+                        fileLink.rel = 'noopener';
+                        fileLink.style.cssText = 'display: inline-block; padding: 8px 12px; background-color: #f1f3f5; border-radius: 5px; text-decoration: none; color: #333; font-weight: bold; font-size: 14px; border: 1px solid #dee2e6;';
+                        fileLink.innerText = '📎 첨부파일 열기 / 다운로드';
+
+                        fileBox.appendChild(fileLink);
+                        previewArea.appendChild(fileBox);
                     }
                 }
             });
-            // [여기까지 복사해서 기존 코드와 교체하세요]
             savedLogList.appendChild(li);
         });
     }
@@ -548,12 +606,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // 3. [데이터베이스 저장] 텍스트 내용과 발급받은 파일 URL들을 DB에 함께 기록하기
-                const today = new Date();
-                const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
+                const dateStr = formatDate(new Date()); // 연도까지 포함 (예: 2026-10-06)
 
                 const { error: dbError } = await supabase
                     .from('logs')
                     .insert([{
+                        category: pageCategory,
                         log_date: dateStr,
                         title: title,
                         content: content,
