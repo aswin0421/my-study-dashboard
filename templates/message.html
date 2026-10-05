@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} · Only For Me{% endblock %}
+
+{% block content %}
+<!-- 안내 메시지 페이지 (스포티파이 인증 결과, 404 등) -->
+<section class="panel message-panel">
+    <span class="message-icon {% if ok %}is-ok{% else %}is-error{% endif %}">{% if ok %}✓{% else %}!{% endif %}</span>
+    <h1 class="message-title">{{ title }}</h1>
+    <p class="message-text">{{ message }}</p>
+    <a href="{{ url_for('home') }}" class="btn btn-secondary">홈으로</a>
+</section>
+{% endblock %}

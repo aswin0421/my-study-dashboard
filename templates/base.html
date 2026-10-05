@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Only For Me{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- ===== 상단 바: 로고 · 메뉴 · 스포티파이 · 로그인 (모든 페이지 공통) ===== -->
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="{{ url_for('home') }}" class="brand">
+                <span class="brand-mark"></span>Only For Me
+            </a>
+
+            <nav class="nav">
+                <a href="{{ url_for('home') }}" class="nav-link {% if request.endpoint == 'home' %}active{% endif %}">홈</a>
+                {% for cat in categories %}
+                <a href="{{ url_for('category', slug=cat.slug) }}"
+                   class="nav-link {% if category and category.slug == cat.slug %}active{% endif %}">{{ cat.short }}</a>
+                {% endfor %}
+            </nav>
+
+            <div class="topbar-actions">
+                <button type="button" id="spotify-widget" class="spotify">
+                    <span id="spotify-cover" class="spotify-cover">🎵</span>
+                    <span class="spotify-text">
+                        <span id="spotify-title" class="spotify-title">음악 연동 준비 중...</span>
+                        <span id="spotify-artist" class="spotify-artist">Spotify API</span>
+                    </span>
+                </button>
+                <button type="button" id="auth-btn" class="btn btn-ghost btn-sm">로그인</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="page">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">컴공 23 박내훈 · devsign project</footer>
+
+    <!-- ===== 공통 팝업 ===== -->
+    <dialog id="login-dialog" class="dialog">
+        <form id="login-form" class="dialog-body">
+            <h3 class="dialog-title">관리자 로그인</h3>
+            <p class="dialog-desc">로그인하면 일정·Todo·일지를 수정할 수 있어요.</p>
+            <input type="email" id="login-email" class="input" placeholder="이메일" autocomplete="username" required>
+            <input type="password" id="login-password" class="input" placeholder="비밀번호" autocomplete="current-password" required>
+            <p id="login-error" class="form-error"></p>
+            <div class="dialog-actions">
+                <button type="button" class="btn btn-secondary" data-close>취소</button>
+                <button type="submit" class="btn btn-primary">로그인</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="spotify-dialog" class="dialog">
+        <div class="dialog-body spotify-detail">
+            <button type="button" class="dialog-close" data-close aria-label="닫기">&times;</button>
+            <img id="spotify-detail-cover" src="" alt="Album Cover" class="spotify-detail-cover">
+            <h3 id="spotify-detail-title" class="spotify-detail-title">노래 제목</h3>
+            <p id="spotify-detail-artist" class="spotify-detail-artist">아티스트 이름</p>
+            <p id="spotify-detail-album" class="spotify-detail-album">앨범 이름</p>
+            <a id="spotify-detail-link" href="#" target="_blank" rel="noopener" class="btn btn-primary">Spotify에서 듣기</a>
+        </div>
+    </dialog>
+
+    <dialog id="image-dialog" class="dialog image-dialog">
+        <button type="button" class="dialog-close" data-close aria-label="닫기">&times;</button>
+        <img id="image-dialog-img" src="" alt="첨부 이미지 크게 보기">
+    </dialog>
+
+    <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+    <!-- ===== 스크립트 ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.ENV = {
+            SUPABASE_URL: {{ supabase_url|tojson }},
+            SUPABASE_KEY: {{ supabase_key|tojson }}
+        };
+    </script>
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

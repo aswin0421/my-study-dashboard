@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category.title }} · Only For Me{% endblock %}
+
+{% block content %}
+<!-- data-category: 이 페이지의 Todo·일지를 어느 카테고리로 저장할지 자바스크립트에 알려줌 -->
+<section class="page-head" data-category="{{ category.slug }}">
+    <span class="page-icon">{{ category.icon }}</span>
+    <div>
+        <h1 class="page-title">{{ category.title }}</h1>
+        {% if category.description %}<p class="page-desc">{{ category.description }}</p>{% endif %}
+    </div>
+</section>
+
+<div class="study-layout">
+    <!-- ===== 왼쪽: 날짜별 Todo ===== -->
+    <section class="panel">
+        <div class="panel-head">
+            <h2 class="panel-title">Todo</h2>
+            <span id="todo-progress" class="pill">0 / 0</span>
+        </div>
+        <div class="progress"><span id="todo-progress-bar"></span></div>
+
+        <input type="date" id="todo-date-picker" class="input">
+
+        <form id="todo-form" class="todo-form owner-only">
+            <input type="text" id="todo-input" class="input" placeholder="할 일 입력..." autocomplete="off">
+            <button type="submit" class="btn btn-primary btn-square" aria-label="할 일 추가">+</button>
+        </form>
+
+        <ul id="todo-list" class="todo-list"></ul>
+        <p id="todo-empty" class="empty-text">할 일이 없습니다.</p>
+    </section>
+
+    <!-- ===== 오른쪽: 공부 일지 작성 / 목록 ===== -->
+    <section class="panel">
+        <div class="panel-head">
+            <h2 class="panel-title">Today Study</h2>
+            <span id="log-mode-badge" class="pill">새 일지</span>
+        </div>
+
+        <div class="log-layout">
+            <div class="log-editor">
+                <input type="text" id="log-title" class="input log-title-input" placeholder="제목">
+                <div id="log-attachment-preview" class="attachment-preview" hidden></div>
+                <textarea id="log-content" class="input textarea log-textarea" placeholder="오늘 공부한 내용을 적어주세요 (Ctrl + Enter 로 저장)"></textarea>
+
+                <div class="log-tools owner-only">
+                    <label for="image-upload" class="btn btn-secondary btn-sm">📷 사진 첨부</label>
+                    <input type="file" id="image-upload" accept="image/*" hidden>
+                    <label for="file-upload" class="btn btn-secondary btn-sm">📁 파일 첨부</label>
+                    <input type="file" id="file-upload" hidden>
+                    <span id="attached-file-info" class="file-info">첨부된 파일이 없습니다.</span>
+                </div>
+
+                <div class="log-actions owner-only">
+                    <button type="button" id="cancel-edit-btn" class="btn btn-secondary" hidden>수정 취소</button>
+                    <button type="button" id="save-log-btn" class="btn btn-primary">저장</button>
+                </div>
+            </div>
+
+            <aside class="log-list-wrap">
+                <h3 class="list-title">Study List <span id="log-count" class="count"></span></h3>
+                <ul id="log-list" class="log-list"></ul>
+                <p id="log-empty" class="empty-text" hidden>아직 작성한 일지가 없습니다.</p>
+            </aside>
+        </div>
+    </section>
+</div>
+{% endblock %}
