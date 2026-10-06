@@ -1,11 +1,13 @@
 """
-매일 아침 7시, 오늘의 캘린더 일정을 디스코드로 보내는 스크립트
+매일 아침 7시, 오늘의 캘린더 일정 + 오늘 수업을 디스코드로 보내는 스크립트
 
     - GitHub Actions 가 매일 06:40(KST)에 실행 → 7시 정각까지 기다렸다가 전송
       (GitHub 예약 실행은 몇 분씩 늦게 시작되는 경우가 많아서 미리 시작해 둠)
     - 일정이 없는 날에도 "오늘은 등록된 일정이 없어요" 알림을 보냄
-    - Supabase calendar 테이블의 day 컬럼(날짜)으로 조회
+    - 일정: Supabase calendar 테이블의 day 컬럼(날짜)으로 조회
       → supabase/calendar_day_column.sql 을 먼저 실행해 두어야 함
+    - 수업: Supabase timetable 테이블에서 오늘 요일 수업 (supabase/timetable.sql)
+      → 시간표를 못 불러와도 일정 알림은 그대로 보냄
 
 필요한 환경변수: SUPABASE_URL, SUPABASE_KEY, DISCORD_WEBHOOK_URL
 (GitHub 에서는 Secrets, 내 PC 에서는 .env 파일)
@@ -56,16 +58,21 @@ def wait_until_send_time():
         time.sleep((target - now).total_seconds())
 
 
-def get_today_schedule(supabase_url, supabase_key, day):
-    """Supabase calendar 테이블에서 해당 날짜의 일정 내용 (없으면 None)"""
-    query = urllib.parse.urlencode({"select": "content", "day": f"eq.{day.isoformat()}"})
+def supabase_get(supabase_url, supabase_key, table, params):
+    """Supabase 테이블 조회 (실패하면 urllib.error.HTTPError)"""
     request = urllib.request.Request(
-        f"{supabase_url.rstrip('/')}/rest/v1/calendar?{query}",
+        f"{supabase_url.rstrip('/')}/rest/v1/{table}?{urllib.parse.urlencode(params)}",
         headers={"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"},
     )
+    with urllib.request.urlopen(request, timeout=15) as response:
+        return json.load(response)
+
+
+def get_today_schedule(supabase_url, supabase_key, day):
+    """calendar 테이블에서 해당 날짜의 일정 내용 (없으면 None)"""
     try:
-        with urllib.request.urlopen(request, timeout=15) as response:
-            rows = json.load(response)
+        rows = supabase_get(supabase_url, supabase_key, "calendar",
+                            {"select": "content", "day": f"eq.{day.isoformat()}"})
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", "replace")
         if "day" in detail and "does not exist" in detail:
@@ -75,15 +82,47 @@ def get_today_schedule(supabase_url, supabase_key, day):
     return rows[0]["content"] if rows else None
 
 
-def build_message(day, schedule):
-    """디스코드로 보낼 메시지 (embed 카드 형태)"""
+def get_today_classes(supabase_url, supabase_key, day):
+    """timetable 테이블에서 해당 요일의 수업 목록 (불러오기 실패하면 None — 알림은 그대로 보냄)"""
+    try:
+        return supabase_get(supabase_url, supabase_key, "timetable", {
+            "select": "subject,room,start_time,end_time",
+            "weekday": f"eq.{day.isoweekday()}",  # 1=월 ... 7=일
+            "order": "start_time",
+        })
+    except urllib.error.HTTPError as e:
+        print(f"[경고] 시간표 조회 실패 ({e.code}): {e.read().decode('utf-8', 'replace')}")
+        return None
+
+
+def format_classes(classes):
+    if classes is None:
+        return "시간표를 불러오지 못했어요."
+    if not classes:
+        return "오늘은 수업이 없어요. 🎉"
+    lines = []
+    for c in classes:
+        line = f"`{c['start_time'][:5]}~{c['end_time'][:5]}` **{c['subject']}**"
+        if c.get("room"):
+            line += f" · {c['room']}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def build_message(day, schedule, classes):
+    """디스코드로 보낼 메시지 (embed 카드: 일정 + 오늘 수업)"""
     title = f"📅 {day.month}월 {day.day}일 ({WEEKDAYS[day.weekday()]}) 오늘의 일정"
+    schedule_text = schedule if schedule else "오늘은 등록된 일정이 없어요. 🙂"
     return {
         "username": "Only For Me",
         "embeds": [{
             "title": title,
-            "description": schedule if schedule else "오늘은 등록된 일정이 없어요. 🙂",
             "color": EMBED_COLOR,
+            # 디스코드 칸 하나에 최대 1024자
+            "fields": [
+                {"name": "🗓 일정", "value": schedule_text[:1024]},
+                {"name": "📚 오늘 수업", "value": format_classes(classes)[:1024]},
+            ],
         }],
     }
 
@@ -110,8 +149,10 @@ def main():
         wait_until_send_time()
 
     today = datetime.now(KST).date()
-    schedule = get_today_schedule(env("SUPABASE_URL"), env("SUPABASE_KEY"), today)
-    message = build_message(today, schedule)
+    supabase_url, supabase_key = env("SUPABASE_URL"), env("SUPABASE_KEY")
+    schedule = get_today_schedule(supabase_url, supabase_key, today)
+    classes = get_today_classes(supabase_url, supabase_key, today)
+    message = build_message(today, schedule, classes)
 
     if dry_run:
         print(json.dumps(message, ensure_ascii=False, indent=2))

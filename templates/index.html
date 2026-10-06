@@ -1,11 +1,23 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="hero">
-    <p class="eyebrow" id="today-label"></p>
-    <h1 class="hero-title">Only For Me<span class="accent">.</span></h1>
-    <p class="hero-desc">컴공 23 박내훈 | devsign project</p>
-</section>
+<div class="hero-row">
+    <section class="hero">
+        <p class="eyebrow" id="today-label"></p>
+        <h1 class="hero-title">Only For Me<span class="accent">.</span></h1>
+        <p class="hero-desc">컴공 23 박내훈 | devsign project</p>
+    </section>
+
+    <!-- ===== 오늘 수업 (시간표에서 오늘 요일만) ===== -->
+    <aside class="panel today-card">
+        <div class="panel-head">
+            <h2 class="panel-title">오늘 수업</h2>
+            <a href="{{ url_for('timetable') }}" class="link-more">전체 시간표 &rarr;</a>
+        </div>
+        <ul id="today-class-list" class="today-class-list"></ul>
+        <p id="today-class-empty" class="empty-text" hidden>오늘은 수업이 없어요 🎉</p>
+    </aside>
+</div>
 
 <!-- ===== 캘린더 ===== -->
 <section class="panel">

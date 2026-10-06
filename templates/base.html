@@ -19,6 +19,7 @@
 
             <nav class="nav">
                 <a href="{{ url_for('home') }}" class="nav-link {% if request.endpoint == 'home' %}active{% endif %}">홈</a>
+                <a href="{{ url_for('timetable') }}" class="nav-link {% if request.endpoint == 'timetable' %}active{% endif %}">시간표</a>
                 {% for cat in categories %}
                 <a href="{{ url_for('category', slug=cat.slug) }}"
                    class="nav-link {% if category and category.slug == cat.slug %}active{% endif %}">{{ cat.short }}</a>

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}시간표 · Only For Me{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <span class="page-icon">🗓️</span>
+    <div>
+        <h1 class="page-title">시간표</h1>
+        <p class="page-desc">이번 학기 수업 시간표</p>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2 class="panel-title">주간 시간표</h2>
+        <button type="button" id="add-class-btn" class="btn btn-primary btn-sm owner-only">+ 수업 추가</button>
+    </div>
+    <div id="timetable" class="timetable"></div>
+    <p id="timetable-empty" class="empty-text" hidden>등록된 수업이 없어요.</p>
+</section>
+
+<!-- ===== 수업 추가·수정 팝업 (로그인했을 때만 열림) ===== -->
+<dialog id="class-dialog" class="dialog">
+    <form id="class-form" class="dialog-body">
+        <h3 id="class-dialog-title" class="dialog-title">수업 추가</h3>
+        <input type="text" id="class-subject" class="input" placeholder="과목명" autocomplete="off">
+        <input type="text" id="class-professor" class="input" placeholder="교수 (선택)" autocomplete="off">
+        <input type="text" id="class-room" class="input" placeholder="강의실 (선택)" autocomplete="off">
+        <div class="form-row">
+            <select id="class-weekday" class="input" aria-label="요일">
+                <option value="1">월</option>
+                <option value="2">화</option>
+                <option value="3">수</option>
+                <option value="4">목</option>
+                <option value="5">금</option>
+                <option value="6">토</option>
+                <option value="7">일</option>
+            </select>
+            <input type="time" id="class-start" class="input" step="300" aria-label="시작 시간">
+            <span class="form-row-sep">~</span>
+            <input type="time" id="class-end" class="input" step="300" aria-label="끝나는 시간">
+        </div>
+        <p id="class-error" class="form-error"></p>
+        <div class="dialog-actions">
+            <button type="button" id="delete-class-btn" class="btn btn-danger push-left" hidden>삭제</button>
+            <button type="button" class="btn btn-secondary" data-close>취소</button>
+            <button type="submit" class="btn btn-primary">저장</button>
+        </div>
+    </form>
+</dialog>
+{% endblock %}

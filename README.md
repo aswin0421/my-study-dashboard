@@ -18,17 +18,19 @@ categories.py        # ⭐ 공부 카테고리 목록 — 카테고리 추가/�
 spotify_api.py       # Spotify 로그인(/callback) · 현재 재생 곡 API(/api/spotify)
 templates/
   base.html          # 공통 틀 (상단 바, 로그인/스포티파이/사진 팝업, 스크립트)
-  index.html         # 메인: 캘린더 + 카테고리 카드
+  index.html         # 메인: 오늘 수업 카드 + 캘린더 + 카테고리 카드
+  timetable.html     # 학교 시간표 (주간 표, 로그인 시 수업 추가·수정·삭제)
   category.html      # 카테고리 공통 페이지: Todo + 공부 일지
   message.html       # 안내 페이지 (스포티파이 인증 결과, 404)
 static/
   css/style.css      # 색·간격은 맨 위 :root 변수에서 한 번에 변경
   js/main.js         # 시작점 — 페이지에 있는 기능만 켬
   js/lib/            # 공통 도구: supabase 연결, 로그인, 팝업, 토스트 알림, 도우미 함수
-  js/features/       # 화면 기능: spotify, calendar, todos, logs, image-viewer
+  js/features/       # 화면 기능: spotify, calendar, timetable, todos, logs, image-viewer
 supabase/
   owner_only.sql            # "보는 건 누구나, 수정은 나만" 보안 설정 (Supabase SQL Editor 에서 실행)
   calendar_day_column.sql   # calendar 에 실제 날짜(day) 컬럼 자동 생성
+  timetable.sql             # 시간표 테이블 + 이번 학기 수업 목록
 scripts/
   notify_today.py    # 오늘 일정을 디스코드로 보내는 스크립트
 .github/workflows/
@@ -61,7 +63,7 @@ python app.py               # http://127.0.0.1:5000
 
 ## 매일 아침 일정 알림 (디스코드)
 
-GitHub Actions 가 매일 06:40(KST)에 실행되어 **7시 정각**에 오늘 일정을 디스코드로 보냅니다. 일정이 없는 날에도 "오늘은 등록된 일정이 없어요" 알림이 옵니다.
+GitHub Actions 가 매일 06:40(KST)에 실행되어 **7시 정각**에 오늘 일정과 오늘 수업(시간표)을 디스코드로 보냅니다. 일정이 없는 날에도 "오늘은 등록된 일정이 없어요" 알림이 옵니다.
 
 1. Supabase SQL Editor 에서 `supabase/calendar_day_column.sql` 실행
 2. 디스코드 채널 설정 → 연동 → 웹후크 → 새 웹후크 → **웹후크 URL 복사**
@@ -77,6 +79,7 @@ GitHub Actions 가 매일 06:40(KST)에 실행되어 **7시 정각**에 오늘 �
 | 테이블 | 주요 컬럼 |
 |---|---|
 | `calendar` | `event_date` (`memo_YYYY_M_D`, 월은 0부터) · `day` (자동 계산되는 실제 날짜) · `content` |
+| `timetable` | `subject` · `professor` · `room` · `weekday` (1=월 … 7=일) · `start_time` · `end_time` |
 | `todos` | `category` · `todo_date` (YYYY-MM-DD) · `task_text` · `completed` |
 | `logs` | `category` · `log_date` (YYYY-MM-DD) · `title` · `content` · `image_url` · `file_url` |
 | Storage `log_files` | 일지 첨부 사진/파일 (공개 버킷) |

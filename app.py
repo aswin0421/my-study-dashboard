@@ -41,6 +41,12 @@ def category(slug):
     return render_template("category.html", category=cat)
 
 
+# 학교 시간표 (데이터는 Supabase timetable 테이블)
+@app.route("/timetable")
+def timetable():
+    return render_template("timetable.html")
+
+
 # 예전 주소(/webservice) 즐겨찾기 호환용
 @app.route("/webservice")
 def webservice_redirect():

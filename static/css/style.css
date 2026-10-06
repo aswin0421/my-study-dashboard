@@ -667,6 +667,89 @@ body:not(.is-owner) .day:not(.has-memo) { cursor: default; }  /* 방문자는 �
 .message-text { margin-bottom: 12px; color: var(--text-2); }
 
 /* =========================================================
+   시간표 · 오늘 수업 카드
+   ========================================================= */
+/* 메인: 인사말 + 오늘 수업 카드를 한 줄에 */
+.hero-row { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; align-items: center; }
+.today-card .panel-head { margin-bottom: 12px; }
+.link-more { color: var(--text-2); font-size: 0.82rem; text-decoration: none; white-space: nowrap; }
+.link-more:hover { color: var(--accent); }
+
+.today-class-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.today-class {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    background: var(--surface-2);
+    border-left: 3px solid var(--c, var(--accent));
+    border-radius: 10px;
+    transition: opacity 0.2s;
+}
+.today-class.is-now { background: var(--accent-soft); }
+.today-class.is-done { opacity: 0.4; }
+.today-class-body { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.4; }
+.today-class-time { color: var(--text-3); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.today-class-subject { font-size: 0.92rem; font-weight: 600; }
+.today-class-room { color: var(--text-2); font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.today-card .empty-text { padding: 12px 0; }
+
+/* 시간표 페이지: 주간 표 */
+.timetable { --hour-h: 64px; --time-w: 44px; --col-min: 96px; overflow-x: auto; }
+.tt-head, .tt-body {
+    display: grid;
+    grid-template-columns: var(--time-w) repeat(var(--days, 5), minmax(var(--col-min), 1fr));
+    min-width: calc(var(--time-w) + var(--days, 5) * var(--col-min));
+}
+.tt-head { margin-bottom: 6px; }
+.tt-day { margin: 0 3px; padding: 6px 0; border-radius: var(--radius-sm); color: var(--text-2); font-size: 0.85rem; font-weight: 600; text-align: center; }
+.tt-day.is-today { background: var(--accent-fill); color: #fff; }
+
+.tt-body { height: calc(var(--hours, 8) * var(--hour-h)); border-bottom: 1px solid var(--border); }
+.tt-times { display: flex; flex-direction: column; }
+.tt-times span { height: var(--hour-h); padding: 2px 8px 0 0; color: var(--text-3); font-size: 0.72rem; text-align: right; }
+
+.tt-col {
+    position: relative;
+    border-left: 1px solid var(--border);
+    /* 1시간마다 가로줄 */
+    background-image: repeating-linear-gradient(to bottom, var(--border) 0 1px, transparent 1px var(--hour-h));
+}
+.tt-col:last-child { border-right: 1px solid var(--border); }
+.tt-col.is-today { background-color: rgba(255, 59, 59, 0.04); }
+
+.tt-block {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+    border: none;
+    border-left: 3px solid var(--c);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--c) 18%, var(--surface-2));
+    text-align: left;
+    cursor: default;
+}
+button.tt-block { cursor: pointer; transition: background 0.15s; }
+button.tt-block:hover { background: color-mix(in srgb, var(--c) 30%, var(--surface-2)); }
+.tt-subject { font-size: 0.82rem; font-weight: 700; line-height: 1.3; }
+.tt-room, .tt-prof { color: var(--text-2); font-size: 0.7rem; line-height: 1.35; word-break: keep-all; }
+
+/* 현재 시각 빨간 선 */
+.tt-now { position: absolute; left: 0; right: 0; z-index: 2; height: 2px; background: var(--accent); pointer-events: none; }
+.tt-now::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+/* 수업 추가·수정 팝업의 요일 + 시간 한 줄 */
+.form-row { display: flex; align-items: center; gap: 8px; }
+.form-row select { width: 76px; flex-shrink: 0; }
+.form-row-sep { color: var(--text-3); }
+select.input { padding-right: 8px; cursor: pointer; }
+
+/* =========================================================
    반응형 (태블릿 · 모바일)
    ========================================================= */
 @media (max-width: 1000px) {
@@ -683,6 +766,7 @@ body:not(.is-owner) .day:not(.has-memo) { cursor: default; }  /* 방문자는 �
     .panel { padding: 18px; }
     .study-layout { grid-template-columns: 1fr; }
     .log-textarea { min-height: 200px; }
+    .hero-row { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 600px) {
@@ -691,6 +775,13 @@ body:not(.is-owner) .day:not(.has-memo) { cursor: default; }  /* 방문자는 �
     /* 좁은 화면에서는 일정 미리보기를 빨간 점으로 */
     .day-memo { width: 6px; height: 6px; padding: 0; border: none; border-radius: 50%; background: var(--accent); font-size: 0; }
     .category-card { padding: 16px; }
+    /* 좁은 화면 시간표: 칸을 줄이고 교수 이름은 숨김 */
+    .timetable { --hour-h: 58px; --time-w: 30px; --col-min: 54px; }
+    .tt-block { padding: 4px 5px; }
+    .tt-subject { font-size: 0.7rem; }
+    .tt-room { font-size: 0.6rem; }
+    .tt-prof { display: none; }
+    .tt-times span { padding-right: 4px; font-size: 0.62rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
