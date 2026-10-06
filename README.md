@@ -27,7 +27,12 @@ static/
   js/lib/            # 공통 도구: supabase 연결, 로그인, 팝업, 토스트 알림, 도우미 함수
   js/features/       # 화면 기능: spotify, calendar, todos, logs, image-viewer
 supabase/
-  owner_only.sql     # "보는 건 누구나, 수정은 나만" 보안 설정 (Supabase SQL Editor 에서 실행)
+  owner_only.sql            # "보는 건 누구나, 수정은 나만" 보안 설정 (Supabase SQL Editor 에서 실행)
+  calendar_day_column.sql   # calendar 에 실제 날짜(day) 컬럼 자동 생성
+scripts/
+  notify_today.py    # 오늘 일정을 디스코드로 보내는 스크립트
+.github/workflows/
+  daily-notify.yml   # 매일 아침 7시(KST) notify_today.py 자동 실행 (GitHub Actions)
 ```
 
 ## 실행 방법
@@ -54,11 +59,24 @@ python app.py               # http://127.0.0.1:5000
 },
 ```
 
+## 매일 아침 일정 알림 (디스코드)
+
+GitHub Actions 가 매일 06:40(KST)에 실행되어 **7시 정각**에 오늘 일정을 디스코드로 보냅니다. 일정이 없는 날에도 "오늘은 등록된 일정이 없어요" 알림이 옵니다.
+
+1. Supabase SQL Editor 에서 `supabase/calendar_day_column.sql` 실행
+2. 디스코드 채널 설정 → 연동 → 웹후크 → 새 웹후크 → **웹후크 URL 복사**
+3. GitHub 저장소 → Settings → Secrets and variables → Actions 에 등록: `SUPABASE_URL`, `SUPABASE_KEY`, `DISCORD_WEBHOOK_URL`
+4. Actions 탭 → `daily-calendar-notify` → **Run workflow** 로 바로 테스트
+
+내 PC 에서 테스트: `.env` 에 `DISCORD_WEBHOOK_URL` 추가 후 `python scripts/notify_today.py --dry-run` (전송 없이 메시지만 출력)
+
+> 공개 저장소는 60일 동안 활동(커밋 등)이 없으면 예약 실행이 자동으로 꺼집니다. 꺼지면 Actions 탭에서 다시 켜세요.
+
 ## Supabase 테이블
 
 | 테이블 | 주요 컬럼 |
 |---|---|
-| `calendar` | `event_date` (`memo_YYYY_M_D`, 월은 0부터) · `content` |
+| `calendar` | `event_date` (`memo_YYYY_M_D`, 월은 0부터) · `day` (자동 계산되는 실제 날짜) · `content` |
 | `todos` | `category` · `todo_date` (YYYY-MM-DD) · `task_text` · `completed` |
 | `logs` | `category` · `log_date` (YYYY-MM-DD) · `title` · `content` · `image_url` · `file_url` |
 | Storage `log_files` | 일지 첨부 사진/파일 (공개 버킷) |
