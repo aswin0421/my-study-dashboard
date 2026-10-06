@@ -40,7 +40,8 @@ USER_AGENT = "my-study-dashboard-notifier (https://github.com/aswin0421/my-study
 
 
 def env(name):
-    value = os.getenv(name)
+    # Secrets 에 붙여넣을 때 끝에 줄바꿈·공백이 섞여 들어가는 경우가 많아서 제거
+    value = (os.getenv(name) or "").strip()
     if not value:
         sys.exit(f"[오류] 환경변수 {name} 가 없습니다. (.env 또는 GitHub Secrets 확인)")
     return value
