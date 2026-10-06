@@ -7,6 +7,11 @@ from flask import Flask, Response, abort, redirect, render_template, url_for
 # .env 값을 먼저 읽어야 아래 모듈들(스포티파이 키 등)이 값을 사용할 수 있습니다.
 load_dotenv()
 
+# 서버 환경변수에 붙여넣을 때 앞뒤 공백·줄바꿈이 섞여 들어가는 경우가 많아서 정리
+for _key in ("SUPABASE_URL", "SUPABASE_KEY", "SPOTIPY_CLIENT_ID", "SPOTIPY_CLIENT_SECRET", "SPOTIPY_REDIRECT_URI"):
+    if os.getenv(_key):
+        os.environ[_key] = os.environ[_key].strip()
+
 from categories import CATEGORIES, CATEGORY_MAP  # noqa: E402
 from spotify_api import spotify_bp  # noqa: E402
 
