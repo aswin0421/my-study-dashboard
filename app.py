@@ -2,7 +2,7 @@ import mimetypes
 import os
 
 from dotenv import load_dotenv
-from flask import Flask, abort, redirect, render_template, url_for
+from flask import Flask, Response, abort, redirect, render_template, url_for
 
 # .env 값을 먼저 읽어야 아래 모듈들(스포티파이 키 등)이 값을 사용할 수 있습니다.
 load_dotenv()
@@ -51,6 +51,12 @@ def timetable():
 @app.route("/webservice")
 def webservice_redirect():
     return redirect(url_for("category", slug="webservice"))
+
+
+# 개인 대시보드라 검색엔진 수집 막기
+@app.route("/robots.txt")
+def robots():
+    return Response("User-agent: *\nDisallow: /\n", mimetype="text/plain")
 
 
 @app.errorhandler(404)

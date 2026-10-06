@@ -32,7 +32,9 @@ supabase/
   calendar_day_column.sql   # calendar 에 실제 날짜(day) 컬럼 자동 생성
   timetable.sql             # 시간표 테이블 + 이번 학기 수업 목록
 scripts/
-  notify_today.py    # 오늘 일정을 디스코드로 보내는 스크립트
+  notify_today.py            # 오늘 일정·수업을 디스코드로 보내는 스크립트
+  spotify_refresh_token.py   # 서버에 넣을 스포티파이 토큰 확인
+render.yaml          # Render 서버 배포 설정
 .github/workflows/
   daily-notify.yml   # 매일 아침 7시(KST) notify_today.py 자동 실행 (GitHub Actions)
 ```
@@ -46,6 +48,19 @@ pip install -r requirements.txt
 copy .env.example .env      # .env 에 Supabase / Spotify 키 입력
 python app.py               # http://127.0.0.1:5000
 ```
+
+## 서버 배포 (Render)
+
+`render.yaml` 설정대로 Render 무료 플랜에 올라가고, `main` 에 push 할 때마다 자동으로 다시 배포됩니다.
+
+1. 내 PC 에서 스포티파이 위젯으로 로그인해 둔 상태에서 `python scripts/spotify_refresh_token.py` 실행 → 출력된 토큰 복사
+2. [Render](https://render.com) 가입 (GitHub 계정으로) → **New → Blueprint** → 이 저장소 선택
+3. 환경변수 입력: `SUPABASE_URL`, `SUPABASE_KEY`, `SPOTIPY_CLIENT_ID`, `SPOTIPY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN`
+4. 배포가 끝나면 `https://<서비스이름>.onrender.com` 으로 접속
+
+- 서버에서는 스포티파이 로그인(`/callback`)이 꺼지고, 환경변수 토큰으로만 동작합니다. (방문자가 위젯을 바꾸지 못하게)
+- 무료 플랜은 15분 동안 접속이 없으면 잠들어서, 다음 첫 접속이 30초~1분 정도 걸립니다.
+- 검색엔진에는 노출되지 않도록 막아두었습니다. (`robots.txt`, `noindex`)
 
 ## 카테고리 추가하기
 
