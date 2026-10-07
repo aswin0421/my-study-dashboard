@@ -1,21 +1,29 @@
 # my-study-dashboard
 
+[![ci](https://github.com/aswin0421/my-study-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/aswin0421/my-study-dashboard/actions/workflows/ci.yml)
+
 **Only For Me** — 개인 공부 대시보드 (컴공 23 박내훈 · devsign project)
 
-캘린더 일정, 카테고리별 Todo · 공부 일지(사진/파일 첨부), 실시간 Spotify 재생 곡을 한 화면에서 관리하는 Flask 웹사이트입니다.
+캘린더 일정, 학교 시간표, 카테고리별 Todo · 공부 일지(사진/파일 첨부), 실시간 Spotify 재생 곡을 한 화면에서 관리하는 Flask 웹사이트입니다.
 
 ## 기술 스택
 
-- **Backend**: Python 3.9 · Flask · spotipy
+- **Backend**: Python (로컬 3.9 / 서버 3.12) · Flask · gunicorn · spotipy
 - **DB / 파일 저장소 / 로그인**: Supabase (PostgreSQL, Storage, Auth)
 - **Frontend**: Jinja 템플릿 · 바닐라 JS (ES Modules) · CSS 변수 기반 다크 테마 · Pretendard 폰트
+- **배포 · 자동화**: Docker · GitHub Actions (테스트·Docker 빌드 검사, 아침 알림)
 
 ## 폴더 구조
 
 ```
-app.py               # 페이지 라우트 (홈, 카테고리, 404)
+app.py               # 페이지 라우트 (홈, 시간표, 카테고리, /healthz, 404)
 categories.py        # ⭐ 공부 카테고리 목록 — 카테고리 추가/수정은 여기만
 spotify_api.py       # Spotify 로그인(/callback) · 현재 재생 곡 API(/api/spotify)
+gunicorn.conf.py     # 운영용 웹서버 설정 (포트·프로세스 수는 환경변수로)
+Dockerfile           # 서버 이미지 — 어디에 배포하든 같은 환경
+docker-compose.yml   # 내 PC·가상 서버에서 Docker 로 실행
+render.yaml          # (Render 를 쓸 때만) 배포 설정
+tests/               # 자동 테스트 (python -m pytest)
 templates/
   base.html          # 공통 틀 (상단 바, 로그인/스포티파이/사진 팝업, 스크립트)
   index.html         # 메인: 오늘 수업 카드 + 캘린더 + 카테고리 카드
@@ -34,33 +42,43 @@ supabase/
 scripts/
   notify_today.py            # 오늘 일정·수업을 디스코드로 보내는 스크립트
   spotify_refresh_token.py   # 서버에 넣을 스포티파이 토큰 확인
-render.yaml          # Render 서버 배포 설정
 .github/workflows/
-  daily-notify.yml   # 매일 아침 7시(KST) notify_today.py 자동 실행 (GitHub Actions)
+  ci.yml             # push 마다 테스트 + Docker 빌드·실행 검사
+  daily-notify.yml   # 매일 아침 7시(KST) notify_today.py 자동 실행
 ```
 
 ## 실행 방법
 
+**개발 (내 PC)**
+
 ```bash
 python -m venv venv
 venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 copy .env.example .env      # .env 에 Supabase / Spotify 키 입력
 python app.py               # http://127.0.0.1:5000
 ```
 
-## 서버 배포 (Render)
+**테스트**: `python -m pytest` (외부 서비스에 접속하지 않음)
 
-`render.yaml` 설정대로 Render 무료 플랜에 올라가고, `main` 에 push 할 때마다 자동으로 다시 배포됩니다.
+**Docker** (Docker 가 설치된 PC·서버): `.env` 에 `SPOTIFY_REFRESH_TOKEN` 을 넣은 뒤 `docker compose up --build` → http://localhost:8000
 
-1. 내 PC 에서 스포티파이 위젯으로 로그인해 둔 상태에서 `python scripts/spotify_refresh_token.py` 실행 → 출력된 토큰 복사
-2. [Render](https://render.com) 가입 (GitHub 계정으로) → **New → Blueprint** → 이 저장소 선택
-3. 환경변수 입력: `SUPABASE_URL`, `SUPABASE_KEY`, `SPOTIPY_CLIENT_ID`, `SPOTIPY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN`
-4. 배포가 끝나면 `https://<서비스이름>.onrender.com` 으로 접속
+## 서버 배포
 
-- 서버에서는 스포티파이 로그인(`/callback`)이 꺼지고, 환경변수 토큰으로만 동작합니다. (방문자가 위젯을 바꾸지 못하게)
-- 무료 플랜은 15분 동안 접속이 없으면 잠들어서, 다음 첫 접속이 30초~1분 정도 걸립니다.
+어디에 배포하든 **같은 Docker 이미지**(`Dockerfile`)로 실행되고, 설정은 전부 환경변수로 넣습니다.
+
+| 환경변수 | 설명 |
+|---|---|
+| `SUPABASE_URL`, `SUPABASE_KEY` | Supabase 접속 정보 |
+| `SPOTIPY_CLIENT_ID`, `SPOTIPY_CLIENT_SECRET` | Spotify 앱 키 (없으면 위젯만 꺼지고 사이트는 정상 동작) |
+| `SPOTIFY_REFRESH_TOKEN` | 서버용 내 Spotify 토큰 — `python scripts/spotify_refresh_token.py` 로 확인 |
+| `PORT` | 접속 포트 (대부분의 플랫폼이 자동 설정, 기본 8000) |
+
+- 서버는 헬스체크 주소 `/healthz` 로 상태를 확인합니다.
+- `SPOTIFY_REFRESH_TOKEN` 이 있으면 스포티파이 로그인(`/callback`)이 꺼집니다. (방문자가 위젯을 바꾸지 못하게)
 - 검색엔진에는 노출되지 않도록 막아두었습니다. (`robots.txt`, `noindex`)
+
+배포처 후보: Render(`render.yaml` 포함, 무료지만 15분 후 잠듦) · Google Cloud Run · 가상 서버(`docker-compose.yml`)
 
 ## 카테고리 추가하기
 

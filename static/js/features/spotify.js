@@ -69,18 +69,32 @@ export function initSpotify() {
         }
     }
 
+    let timer = null;
+
     async function update() {
         try {
             const response = await fetch('/api/spotify');
             current = await response.json();
+
+            // 서버에 스포티파이 키가 없으면 위젯을 숨기고 더 이상 묻지 않음
+            if (current.status === 'disabled') {
+                widget.hidden = true;
+                clearInterval(timer);
+                document.removeEventListener('visibilitychange', onVisible);
+                return;
+            }
             render(current);
         } catch (err) {
             console.error('Spotify 통신 에러:', err);
         }
     }
 
-    update();
     // 탭이 안 보일 때는 요청을 쉬고, 다시 보이면 바로 갱신
-    setInterval(() => { if (!document.hidden) update(); }, POLL_MS);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) update(); });
+    function onVisible() {
+        if (!document.hidden) update();
+    }
+
+    update();
+    timer = setInterval(onVisible, POLL_MS);
+    document.addEventListener('visibilitychange', onVisible);
 }

@@ -25,6 +25,9 @@ SCOPE = "user-read-currently-playing user-read-playback-state"
 # 서버(배포) 모드에서 쓰는 내 스포티파이 토큰 (없으면 로컬 모드)
 REFRESH_TOKEN = (os.getenv("SPOTIFY_REFRESH_TOKEN") or "").strip()
 
+# 스포티파이 키가 없으면(테스트 서버, 다른 프로젝트에 재사용 등) 사이트는 그대로 두고 위젯만 끔
+ENABLED = bool(os.getenv("SPOTIPY_CLIENT_ID") and os.getenv("SPOTIPY_CLIENT_SECRET"))
+
 # OAuth 인증 객체 생성 (로컬: .cache 파일 / 서버: 메모리에 토큰 보관)
 sp_oauth = SpotifyOAuth(
     client_id=os.getenv("SPOTIPY_CLIENT_ID"),
@@ -34,7 +37,7 @@ sp_oauth = SpotifyOAuth(
     scope=SCOPE,
     cache_handler=MemoryCacheHandler() if REFRESH_TOKEN else CacheFileHandler(cache_path=".cache"),
     open_browser=False,
-)
+) if ENABLED else None
 
 
 def _get_token_info():
@@ -47,10 +50,10 @@ def _get_token_info():
 
 @spotify_bp.route("/callback")
 def callback():
-    if REFRESH_TOKEN:
+    if REFRESH_TOKEN or not ENABLED:
         # 서버에서는 다른 사람이 로그인해서 토큰을 바꾸지 못하게 막아둠
         return render_template("message.html", ok=False, title="사용할 수 없는 기능",
-                               message="서버에서는 스포티파이 로그인을 사용하지 않습니다."), 404
+                               message="이 서버에서는 스포티파이 로그인을 사용하지 않습니다."), 404
 
     # 1. 스포티파이가 URL에 달아준 인증 코드(code)를 뽑아옵니다.
     code = request.args.get("code")
@@ -78,6 +81,9 @@ def _pick_cover(images):
 
 @spotify_bp.route("/api/spotify")
 def spotify_status():
+    if not ENABLED:
+        return jsonify(status="disabled")  # 위젯 숨김
+
     try:
         token_info = _get_token_info()
 

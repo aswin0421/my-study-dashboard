@@ -1,0 +1,15 @@
+# 내 PC 또는 가상 서버(EC2 등)에서 Docker 로 실행할 때
+#   docker compose up --build -d   → http://localhost:8000
+#   docker compose logs -f         → 로그 보기
+#   docker compose down            → 끄기
+#
+# .env 의 값이 환경변수로 들어갑니다.
+# Docker 안에서는 스포티파이 로그인 화면을 쓸 수 없으니 .env 에 SPOTIFY_REFRESH_TOKEN 을 넣어주세요.
+# (값 확인: python scripts/spotify_refresh_token.py)
+services:
+  web:
+    build: .
+    env_file: .env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped

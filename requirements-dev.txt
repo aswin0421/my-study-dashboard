@@ -1,0 +1,6 @@
+# Development / test only (not installed on the server)
+#   pip install -r requirements-dev.txt
+#   python -m pytest
+# NOTE: keep this file ASCII-only. Older pip on Korean Windows reads it as cp949.
+-r requirements.txt
+pytest>=8,<9

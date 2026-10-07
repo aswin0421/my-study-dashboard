@@ -2,7 +2,7 @@ import mimetypes
 import os
 
 from dotenv import load_dotenv
-from flask import Flask, Response, abort, redirect, render_template, url_for
+from flask import Flask, Response, abort, jsonify, redirect, render_template, url_for
 
 # .env 값을 먼저 읽어야 아래 모듈들(스포티파이 키 등)이 값을 사용할 수 있습니다.
 load_dotenv()
@@ -56,6 +56,13 @@ def timetable():
 @app.route("/webservice")
 def webservice_redirect():
     return redirect(url_for("category", slug="webservice"))
+
+
+# 헬스체크: 배포 플랫폼·Docker 가 "서버가 살아 있나?" 확인하는 주소
+#   (외부 서비스(Supabase·Spotify)에 의존하지 않아야 그쪽 장애 때 서버가 괜히 재시작되지 않음)
+@app.route("/healthz")
+def healthz():
+    return jsonify(status="ok")
 
 
 # 개인 대시보드라 검색엔진 수집 막기
