@@ -109,7 +109,7 @@ python app.py               # http://127.0.0.1:5000
 
    | 항목 | 값 |
    |---|---|
-   | URL | `https://api.github.com/repos/aswin0421/recommendsys/actions/workflows/daily-notify.yml/dispatches` |
+   | URL | `https://api.github.com/repos/aswin0421/my-study-dashboard/actions/workflows/daily-notify.yml/dispatches` |
    | 실행 시각 | 매일 06:55, 시간대 `Asia/Seoul` |
    | Method | `POST` |
    | Headers | `Authorization: Bearer <5번 토큰>` · `Accept: application/vnd.github+json` · `Content-Type: application/json` |
