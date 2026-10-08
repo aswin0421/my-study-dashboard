@@ -96,16 +96,28 @@ python app.py               # http://127.0.0.1:5000
 
 ## 매일 아침 일정 알림 (디스코드)
 
-GitHub Actions 가 매일 06:40(KST)에 실행되어 **7시 정각**에 오늘 일정과 오늘 수업(시간표)을 디스코드로 보냅니다. 일정이 없는 날에도 "오늘은 등록된 일정이 없어요" 알림이 옵니다.
+[cron-job.org](https://cron-job.org) 가 매일 06:55(KST)에 GitHub Actions 를 실행하고, 스크립트가 **7시 정각**에 오늘 일정과 오늘 수업(시간표)을 디스코드로 보냅니다. 일정이 없는 날에도 "오늘은 등록된 일정이 없어요" 알림이 옵니다.
+
+> GitHub 자체 예약 실행(`schedule`)은 몇 시간씩 늦게 시작돼서(06:40 예약 → 10시 실행) 쓰지 않습니다.
 
 1. Supabase SQL Editor 에서 `supabase/calendar_day_column.sql` 실행
 2. 디스코드 채널 설정 → 연동 → 웹후크 → 새 웹후크 → **웹후크 URL 복사**
 3. GitHub 저장소 → Settings → Secrets and variables → Actions 에 등록: `SUPABASE_URL`, `SUPABASE_KEY`, `DISCORD_WEBHOOK_URL`
 4. Actions 탭 → `daily-calendar-notify` → **Run workflow** 로 바로 테스트
+5. GitHub 토큰 만들기: Settings → Developer settings → Fine-grained tokens → 이 저장소만 선택, 권한 **Actions: Read and write**
+6. cron-job.org 에 작업 추가
+
+   | 항목 | 값 |
+   |---|---|
+   | URL | `https://api.github.com/repos/aswin0421/recommendsys/actions/workflows/daily-notify.yml/dispatches` |
+   | 실행 시각 | 매일 06:55, 시간대 `Asia/Seoul` |
+   | Method | `POST` |
+   | Headers | `Authorization: Bearer <5번 토큰>` · `Accept: application/vnd.github+json` · `Content-Type: application/json` |
+   | Body | `{"ref": "main", "inputs": {"wait_until_send_time": "true"}}` |
+
+   성공하면 응답 코드 `204`. 토큰은 만료일이 있으니 만료되면 새로 만들어 교체하세요.
 
 내 PC 에서 테스트: `.env` 에 `DISCORD_WEBHOOK_URL` 추가 후 `python scripts/notify_today.py --dry-run` (전송 없이 메시지만 출력)
-
-> 공개 저장소는 60일 동안 활동(커밋 등)이 없으면 예약 실행이 자동으로 꺼집니다. 꺼지면 Actions 탭에서 다시 켜세요.
 
 ## Supabase 테이블
 

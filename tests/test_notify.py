@@ -40,9 +40,9 @@ def test_long_schedule_is_cut_to_discord_limit():
 
 
 @pytest.mark.parametrize("start, expected_wait", [
-    ((6, 40), 1200),      # 예약 실행이 제시간에 시작 → 7시까지 20분 대기
+    ((6, 55), 300),       # 예약 실행이 제시간에 시작 → 7시까지 5분 대기
     ((6, 59, 30), 30),
-    ((7, 12), 0),         # GitHub 가 늦게 시작 → 바로 전송
+    ((7, 12), 0),         # 늦게 시작 → 바로 전송
     ((5, 30), 0),         # 1시간보다 일찍 시작하는 경우는 기다리지 않음
 ])
 def test_wait_until_7am(monkeypatch, start, expected_wait):

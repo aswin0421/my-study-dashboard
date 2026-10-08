@@ -1,16 +1,20 @@
 # 매일 아침 7시(KST) 오늘의 캘린더 일정을 디스코드로 보내기
 #   - 스크립트: scripts/notify_today.py
+#   - 실행: cron-job.org 가 매일 06:55(KST)에 GitHub API 로 이 워크플로를 실행 (wait_until_send_time=true)
+#     → 스크립트가 7시 정각까지 기다렸다가 전송
+#     (GitHub 자체 예약 실행(schedule)은 몇 시간씩 늦게 시작돼서 쓰지 않음 — 06:40 예약이 10시에 시작된 적 있음)
 #   - 필요한 Secrets (저장소 Settings → Secrets and variables → Actions):
 #       SUPABASE_URL, SUPABASE_KEY, DISCORD_WEBHOOK_URL
 #   - 테스트: Actions 탭 → daily-calendar-notify → Run workflow (기다리지 않고 바로 전송)
 name: daily-calendar-notify
 
 on:
-  schedule:
-    # cron 은 UTC 기준. 21:40 UTC = 한국시간 06:40
-    # → 스크립트가 7시 정각까지 기다렸다가 전송 (GitHub 예약 실행이 늦게 시작되는 것 대비)
-    - cron: "40 21 * * *"
   workflow_dispatch:
+    inputs:
+      wait_until_send_time:
+        description: "7시 정각까지 기다렸다가 전송 (cron-job.org 예약 실행용)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -32,4 +36,4 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          WAIT_UNTIL_SEND_TIME: ${{ github.event_name == 'schedule' }}
+          WAIT_UNTIL_SEND_TIME: ${{ inputs.wait_until_send_time }}

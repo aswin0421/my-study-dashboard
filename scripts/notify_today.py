@@ -1,8 +1,8 @@
 """
 매일 아침 7시, 오늘의 캘린더 일정 + 오늘 수업을 디스코드로 보내는 스크립트
 
-    - GitHub Actions 가 매일 06:40(KST)에 실행 → 7시 정각까지 기다렸다가 전송
-      (GitHub 예약 실행은 몇 분씩 늦게 시작되는 경우가 많아서 미리 시작해 둠)
+    - cron-job.org 가 매일 06:55(KST)에 GitHub Actions 를 실행 → 7시 정각까지 기다렸다가 전송
+      (Actions 가 켜지는 데 몇십 초 걸려서 미리 시작해 둠)
     - 일정이 없는 날에도 "오늘은 등록된 일정이 없어요" 알림을 보냄
     - 일정: Supabase calendar 테이블의 day 컬럼(날짜)으로 조회
       → supabase/calendar_day_column.sql 을 먼저 실행해 두어야 함
@@ -144,7 +144,7 @@ def send_to_discord(webhook_url, message):
 def main():
     dry_run = "--dry-run" in sys.argv
 
-    # GitHub Actions 의 예약 실행일 때만 7시까지 기다림 (수동 실행·테스트는 바로 전송)
+    # cron-job.org 예약 실행일 때만 7시까지 기다림 (수동 실행·테스트는 바로 전송)
     if os.getenv("WAIT_UNTIL_SEND_TIME") == "true":
         wait_until_send_time()
 
