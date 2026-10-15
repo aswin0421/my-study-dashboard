@@ -37,7 +37,7 @@ def home():
     return render_template("index.html")
 
 
-# 카테고리 페이지 (예: /category/cpp) — 카테고리 목록은 categories.py 에서 관리
+# 카테고리 페이지 (예: /category/diary) — 카테고리 목록은 categories.py 에서 관리
 @app.route("/category/<slug>")
 def category(slug):
     cat = CATEGORY_MAP.get(slug)

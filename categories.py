@@ -11,11 +11,11 @@
 
 CATEGORIES = [
     {
-        "slug": "cpp",
-        "title": "C / C++ 공부일지",
-        "short": "C/C++",
+        "slug": "diary",
+        "title": "일기장",
+        "short": "일기장",
         "description": "",
-        "icon": "💻",
+        "icon": "📔",
     },
     {
         "slug": "toeic",
@@ -40,5 +40,5 @@ CATEGORIES = [
     },
 ]
 
-# slug 로 카테고리를 바로 찾기 위한 사전 (예: CATEGORY_MAP["cpp"])
+# slug 로 카테고리를 바로 찾기 위한 사전 (예: CATEGORY_MAP["diary"])
 CATEGORY_MAP = {category["slug"]: category for category in CATEGORIES}

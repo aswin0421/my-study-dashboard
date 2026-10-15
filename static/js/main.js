@@ -18,7 +18,7 @@ initCalendar();      // 메인 페이지
 initTodayClasses();  // 메인 페이지 '오늘 수업' 카드
 initTimetable();     // 시간표 페이지
 
-// 카테고리 페이지 (<section data-category="cpp"> 처럼 카테고리가 지정된 페이지)
+// 카테고리 페이지 (<section data-category="diary"> 처럼 카테고리가 지정된 페이지)
 const category = document.querySelector('[data-category]')?.dataset.category;
 if (category) {
     initTodos(category);
