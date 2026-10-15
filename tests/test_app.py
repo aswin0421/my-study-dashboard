@@ -21,6 +21,13 @@ def test_category_pages(client, slug):
     assert f'data-category="{slug}"' in res.get_data(as_text=True)
 
 
+def test_category_labels(client):
+    # 일기장은 일기 문구, 공부 카테고리는 기본(공부일지) 문구
+    diary = client.get("/category/diary").get_data(as_text=True)
+    assert "Diary List" in diary and "Study List" not in diary
+    assert "Study List" in client.get("/category/toeic").get_data(as_text=True)
+
+
 def test_unknown_category_is_404(client):
     assert client.get("/category/does-not-exist").status_code == 404
 

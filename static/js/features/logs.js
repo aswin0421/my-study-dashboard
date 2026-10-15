@@ -5,7 +5,7 @@ import { el, formatDate, isSafeUrl } from '../lib/utils.js';
 import { openImage } from './image-viewer.js';
 
 // ==========================================
-// 카테고리 페이지: 공부 일지 작성·수정·삭제 (Supabase logs 테이블 + log_files 저장소)
+// 카테고리 페이지: 일지(일기장은 일기) 작성·수정·삭제 (Supabase logs 테이블 + log_files 저장소)
 // ==========================================
 //  - 목록에서 일지를 누르면 작성칸에 불러와서 '수정 모드'가 됨 → 저장하면 그 일지가 수정됨
 //  - '수정 취소'를 누르면 다시 '새 일지 쓰기' 모드
@@ -27,6 +27,9 @@ export function initLogs(category) {
     const countText = document.getElementById('log-count');
     const emptyText = document.getElementById('log-empty');
 
+    // 화면 문구 (categories.py 의 labels — 예: 일기장은 noun '일기', 공부 카테고리는 '일지')
+    const { noun, listName, placeholder } = document.getElementById('log-panel').dataset;
+
     let logs = [];
     let selected = null;      // 목록에서 고른 일지 (null 이면 '새 일지 쓰기' 모드)
     let removeImage = false;  // 수정 모드에서 기존 사진을 지우기로 했는지 (저장해야 반영)
@@ -45,7 +48,7 @@ export function initLogs(category) {
 
         if (error) {
             console.error('일지 불러오기 에러:', error);
-            toast('일지를 불러오지 못했습니다.', 'error');
+            toast(`${noun}를 불러오지 못했습니다.`, 'error');
             return;
         }
         logs = data || [];
@@ -70,7 +73,7 @@ export function initLogs(category) {
                 type: 'button',
                 className: 'icon-btn icon-btn-sm log-delete owner-only',
                 text: '×',
-                'aria-label': '일지 삭제',
+                'aria-label': `${noun} 삭제`,
                 onClick: (e) => {
                     e.stopPropagation(); // 일지 선택(클릭)까지 같이 실행되지 않게
                     remove(log);
@@ -106,14 +109,14 @@ export function initLogs(category) {
         if (!saving) saveBtn.textContent = editing ? '수정 저장' : '저장';
         cancelBtn.hidden = !editing;
 
-        modeBadge.textContent = !owner ? '읽기 전용' : editing ? '수정 중' : '새 일지';
+        modeBadge.textContent = !owner ? '읽기 전용' : editing ? '수정 중' : `새 ${noun}`;
         modeBadge.classList.toggle('is-accent', owner && editing);
 
         // 방문자는 일지를 읽기만 가능
         titleInput.readOnly = !owner;
         contentInput.readOnly = !owner;
-        titleInput.placeholder = owner ? '제목' : 'Study List 에서 일지를 선택하세요';
-        contentInput.placeholder = owner ? '오늘 공부한 내용을 적어주세요 (Ctrl + Enter 로 저장)' : '';
+        titleInput.placeholder = owner ? '제목' : `${listName} 에서 ${noun}를 선택하세요`;
+        contentInput.placeholder = owner ? `${placeholder} (Ctrl + Enter 로 저장)` : '';
     }
 
     function updateFileInfo() {
@@ -185,7 +188,7 @@ export function initLogs(category) {
         const content = contentInput.value.trim();
 
         if (!title) {
-            toast('일지 제목을 입력해주세요!', 'error');
+            toast(`${noun} 제목을 입력해주세요!`, 'error');
             titleInput.focus();
             return;
         }
@@ -224,7 +227,7 @@ export function initLogs(category) {
                 if (error) throw error;
                 // 권한이 없으면 에러 없이 '0건 수정'으로 끝나므로 결과 개수로 확인
                 if (!data || data.length === 0) throw new Error('수정 권한이 없습니다. 로그인 상태를 확인하세요.');
-                toast('일지를 수정했습니다.', 'success');
+                toast(`${noun}를 수정했습니다.`, 'success');
             } else {
                 // 2-B. 새 일지 저장
                 const { error } = await supabase.from('logs').insert({
@@ -236,7 +239,7 @@ export function initLogs(category) {
                     file_url: newFileUrl,
                 });
                 if (error) throw error;
-                toast('일지를 저장했습니다.', 'success');
+                toast(`${noun}를 저장했습니다.`, 'success');
             }
 
             // 3. 성공하면 '새 일지' 모드로 돌아가고 목록 새로고침
@@ -253,7 +256,7 @@ export function initLogs(category) {
     }
 
     async function remove(log) {
-        if (!confirm(`'${log.title}' 일지를 삭제하시겠습니까?`)) return;
+        if (!confirm(`'${log.title}' ${noun}를 삭제하시겠습니까?`)) return;
 
         const { error } = await supabase.from('logs').delete().eq('id', log.id);
         if (error) {
@@ -261,7 +264,7 @@ export function initLogs(category) {
             return;
         }
         if (selected && selected.id === log.id) select(null); // 수정 중이던 일지를 지웠으면 작성칸 비우기
-        toast('일지를 삭제했습니다.');
+        toast(`${noun}를 삭제했습니다.`);
         load();
     }
 
